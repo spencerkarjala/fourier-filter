@@ -8,40 +8,33 @@
 
 #include <cmath>
 
-#include "PluginProcessor.h"
 #include "PluginEditor.h"
+#include "PluginProcessor.h"
+
 
 //==============================================================================
 PluginProcessor::PluginProcessor()
-     : AudioProcessor(BusesProperties()
-            .withInput("Input",  juce::AudioChannelSet::stereo(), true)
-            .withOutput("Output", juce::AudioChannelSet::stereo(), true)
-        ),
-        m_circularAudioBuffers(NUM_CHANNELS),
-        m_fftBuffer(
-            NUM_CHANNELS,
-            2*FFT_SIZE,
-            FFT_ORDER,
-            WINDOW_SIZE,
-            2,
-            [this](std::complex<float>* fftData, unsigned int channel) { this->processFFT(fftData, channel); }
-        ),
-        m_prevAudioBuffer(NUM_CHANNELS),
-        m_prevSpectrum(NUM_CHANNELS),
-        m_isSpectrumReady(false),
-        m_params(
-            *this,
-            nullptr,
-            juce::Identifier("fourier-filter"),
-            {
-                std::make_unique<juce::AudioParameterFloat>("bands", "Bands", 0, 1.f, 0.5f),
-                std::make_unique<juce::AudioParameterFloat>("position", "Position", 0.f, 1.f, 0.5f),
-                std::make_unique<juce::AudioParameterFloat>("width", "Width", 0.f, 1.f, 0.5f),
-                std::make_unique<juce::AudioParameterFloat>("offset", "Offset", 0.f, 1.f, 0.f),
-                std::make_unique<juce::AudioParameterFloat>("bias", "Bias", -1.f, 1.f, 0.f),
-                std::make_unique<juce::AudioParameterFloat>("makeup", "Makeup", 0.f, 1.f, 0.f)
-            }
-        ){
+  : AudioProcessor(BusesProperties().withInput("Input", juce::AudioChannelSet::stereo(), true).withOutput("Output", juce::AudioChannelSet::stereo(), true))
+  , m_circularAudioBuffers(NUM_CHANNELS)
+  , m_fftBuffer(NUM_CHANNELS,
+                2 * FFT_SIZE,
+                FFT_ORDER,
+                WINDOW_SIZE,
+                2,
+                [this](std::complex<float>* fftData, unsigned int channel) { this->processFFT(fftData, channel); })
+  , m_prevAudioBuffer(NUM_CHANNELS)
+  , m_prevSpectrum(NUM_CHANNELS)
+  , m_isSpectrumReady(false)
+  , m_params(*this,
+             nullptr,
+             juce::Identifier("fourier-filter"),
+             { std::make_unique<juce::AudioParameterFloat>("bands", "Bands", 0, 1.f, 0.5f),
+               std::make_unique<juce::AudioParameterFloat>("position", "Position", 0.f, 1.f, 0.5f),
+               std::make_unique<juce::AudioParameterFloat>("width", "Width", 0.f, 1.f, 0.5f),
+               std::make_unique<juce::AudioParameterFloat>("offset", "Offset", 0.f, 1.f, 0.f),
+               std::make_unique<juce::AudioParameterFloat>("bias", "Bias", -1.f, 1.f, 0.f),
+               std::make_unique<juce::AudioParameterFloat>("makeup", "Makeup", 0.f, 1.f, 0.f) })
+{
     this->setLatencySamples(FFT_SIZE);
 
     p_bands = m_params.getRawParameterValue("bands");
@@ -67,65 +60,77 @@ PluginProcessor::PluginProcessor()
 PluginProcessor::~PluginProcessor() {}
 
 //==============================================================================
-const juce::String PluginProcessor::getName() const {
+const juce::String PluginProcessor::getName() const
+{
     return JucePlugin_Name;
 }
 
-bool PluginProcessor::acceptsMidi() const {
+bool PluginProcessor::acceptsMidi() const
+{
     return false;
 }
 
-bool PluginProcessor::producesMidi() const {
+bool PluginProcessor::producesMidi() const
+{
     return false;
 }
 
-bool PluginProcessor::isMidiEffect() const {
+bool PluginProcessor::isMidiEffect() const
+{
     return false;
 }
 
-double PluginProcessor::getTailLengthSeconds() const {
+double PluginProcessor::getTailLengthSeconds() const
+{
     return 0.0;
 }
 
-int PluginProcessor::getNumPrograms() {
-    return 1;   // NB: some hosts don't cope very well if you tell them there are 0 programs,
-                // so this should be at least 1, even if you're not really implementing programs.
+int PluginProcessor::getNumPrograms()
+{
+    return 1; // NB: some hosts don't cope very well if you tell them there are 0 programs,
+              // so this should be at least 1, even if you're not really implementing programs.
 }
 
-int PluginProcessor::getCurrentProgram() {
+int PluginProcessor::getCurrentProgram()
+{
     return 0;
 }
 
-void PluginProcessor::setCurrentProgram(int) {
+void PluginProcessor::setCurrentProgram(int)
+{
     // parameter name is 'index', deleted to avoid warnings
 }
 
-const juce::String PluginProcessor::getProgramName(int) {
+const juce::String PluginProcessor::getProgramName(int)
+{
     // parameter name is 'index', deleted to avoid warnings
     return {};
 }
 
-void PluginProcessor::changeProgramName(int, const juce::String&) {
+void PluginProcessor::changeProgramName(int, const juce::String&)
+{
     // parameter names are 'index' and 'newName', deleted to avoid warnings
 }
 
 //==============================================================================
-void PluginProcessor::prepareToPlay(double, int) {
+void PluginProcessor::prepareToPlay(double, int)
+{
     // parameter names are 'sampleRate' and 'samplesPerBlock', deleted to avoid warnings
 }
 
-void PluginProcessor::releaseResources() {
+void PluginProcessor::releaseResources()
+{
     // When playback stops, you can use this as an opportunity to free up any
     // spare memory, etc.
 }
 
-bool PluginProcessor::isBusesLayoutSupported(const BusesLayout& layouts) const {
+bool PluginProcessor::isBusesLayoutSupported(const BusesLayout& layouts) const
+{
     // This is the place where you check if the layout is supported.
     // In this template code we only support mono or stereo.
     // Some plugin hosts, such as certain GarageBand versions, will only
     // load plugins that support stereo bus layouts.
-    if (layouts.getMainOutputChannelSet() != juce::AudioChannelSet::mono()
-        && layouts.getMainOutputChannelSet() != juce::AudioChannelSet::stereo()) {
+    if (layouts.getMainOutputChannelSet() != juce::AudioChannelSet::mono() && layouts.getMainOutputChannelSet() != juce::AudioChannelSet::stereo()) {
         return false;
     }
 
@@ -134,11 +139,12 @@ bool PluginProcessor::isBusesLayoutSupported(const BusesLayout& layouts) const {
 
 const uint32_t PARAM_MAX = 1024;
 
-void PluginProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuffer&) {
+void PluginProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuffer&)
+{
     // MidiBuffer parameter is called 'midiMessage', deleted to avoid warnings
 
     juce::ScopedNoDenormals noDenormals;
-    const auto totalNumInputChannels  = getTotalNumInputChannels();
+    const auto totalNumInputChannels = getTotalNumInputChannels();
     const auto totalNumOutputChannels = getTotalNumOutputChannels();
     const auto numSamples = buffer.getNumSamples();
 
@@ -165,9 +171,10 @@ void PluginProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiB
 }
 
 #define PI 3.1415926535
-#define TWO_PI 2*PI
+#define TWO_PI 2.0 * PI
 
-void PluginProcessor::processFFT(std::complex<float>* fftData, unsigned int channel) {
+void PluginProcessor::processFFT(std::complex<float>* fftData, unsigned int channel)
+{
     const double bands = static_cast<double>((*p_bands).load());
     const double position = static_cast<double>((*p_position).load());
     const double width = static_cast<double>((*p_width).load());
@@ -217,22 +224,26 @@ void PluginProcessor::processFFT(std::complex<float>* fftData, unsigned int chan
 }
 
 //==============================================================================
-bool PluginProcessor::hasEditor() const {
+bool PluginProcessor::hasEditor() const
+{
     return true; // (change this to false if you choose to not supply an editor)
 }
 
-juce::AudioProcessorEditor* PluginProcessor::createEditor() {
+juce::AudioProcessorEditor* PluginProcessor::createEditor()
+{
     return new PluginProcessorEditor(*this, m_params);
 }
 
 //==============================================================================
-void PluginProcessor::getStateInformation(juce::MemoryBlock& destData) {
+void PluginProcessor::getStateInformation(juce::MemoryBlock& destData)
+{
     auto state = m_params.copyState();
     std::unique_ptr<juce::XmlElement> xml(state.createXml());
     copyXmlToBinary(*xml, destData);
 }
 
-void PluginProcessor::setStateInformation(const void* data, int sizeInBytes) {
+void PluginProcessor::setStateInformation(const void* data, int sizeInBytes)
+{
     std::unique_ptr<juce::XmlElement> xmlState(this->getXmlFromBinary(data, sizeInBytes));
 
     if (xmlState.get() != nullptr && xmlState->hasTagName(m_params.state.getType())) {
@@ -240,19 +251,23 @@ void PluginProcessor::setStateInformation(const void* data, int sizeInBytes) {
     }
 }
 
-bool PluginProcessor::isAudioBufferReady(uint32_t channel) {
+bool PluginProcessor::isAudioBufferReady(uint32_t channel)
+{
     return m_circularAudioBuffers[channel].isFilled();
 }
 
-void PluginProcessor::copyAudioBuffer(std::vector<float>& destination, uint32_t channel) {
+void PluginProcessor::copyAudioBuffer(std::vector<float>& destination, uint32_t channel)
+{
     m_circularAudioBuffers[channel].copyTo(destination);
 }
 
-bool PluginProcessor::isSpectrumReady() {
+bool PluginProcessor::isSpectrumReady()
+{
     return m_isSpectrumReady.load();
 }
 
-void PluginProcessor::copySpectrum(std::vector<std::vector<Polar>>& destination) {
+void PluginProcessor::copySpectrum(std::vector<std::vector<Polar>>& destination)
+{
     jassert(destination.size() == m_prevSpectrum.size());
     jassert(destination[0].size() == m_prevSpectrum[0].size());
 

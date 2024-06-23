@@ -1,1 +1,4 @@
-Builds/
+.vscode
+.vs
+Builds
+JuceLibraryCode

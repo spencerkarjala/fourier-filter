@@ -13,12 +13,14 @@
 #include "CircularBuffer.h"
 #include "FFTBuffer.h"
 
-struct Polar {
+struct Polar
+{
     float amplitude;
     float phase;
 };
 
-enum {
+enum
+{
     FFT_ORDER = 12,
     FFT_SIZE = 1 << FFT_ORDER,
     WINDOW_SIZE = FFT_SIZE,
@@ -27,10 +29,10 @@ enum {
 
 //==============================================================================
 /**
-*/
-class PluginProcessor  : public juce::AudioProcessor
+ */
+class PluginProcessor : public juce::AudioProcessor
 {
-public:
+  public:
     //==============================================================================
     PluginProcessor();
     ~PluginProcessor() override;
@@ -39,9 +41,9 @@ public:
     void prepareToPlay(double sampleRate, int samplesPerBlock) override;
     void releaseResources() override;
 
-   #ifndef JucePlugin_PreferredChannelConfigurations
+#ifndef JucePlugin_PreferredChannelConfigurations
     bool isBusesLayoutSupported(const BusesLayout& layouts) const override;
-   #endif
+#endif
 
     void processBlock(juce::AudioBuffer<float>&, juce::MidiBuffer&) override;
 
@@ -74,7 +76,7 @@ public:
     bool isSpectrumReady();
     void copySpectrum(std::vector<std::vector<Polar>>& destination);
 
-private:
+  private:
     std::vector<CircularBuffer<float>> m_circularAudioBuffers;
     FFTBuffer m_fftBuffer;
 
