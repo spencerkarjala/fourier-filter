@@ -1,34 +1,24 @@
-/*
-  ==============================================================================
-
-    This file contains the basic framework code for a JUCE plugin editor.
-
-  ==============================================================================
-*/
-
 #pragma once
 
-#include <JuceHeader.h>
 #include "PluginProcessor.h"
+#include <JuceHeader.h>
 
 typedef juce::AudioProcessorValueTreeState::SliderAttachment SliderAttachment;
 
-//==============================================================================
-/**
-*/
-class PluginProcessorEditor  : public juce::AudioProcessorEditor, private juce::Timer
+class PluginProcessorEditor
+  : public juce::AudioProcessorEditor
+  , private juce::Timer
 {
-public:
+  public:
     PluginProcessorEditor(PluginProcessor&, juce::AudioProcessorValueTreeState&);
     ~PluginProcessorEditor() override;
 
-    //==============================================================================
     void paint(juce::Graphics&) override;
     void resized() override;
 
     void timerCallback() override;
 
-private:
+  private:
     PluginProcessor& pluginProcessor;
 
     std::vector<std::vector<float>> m_audioBuffers;
@@ -57,5 +47,5 @@ private:
 
     juce::AudioProcessorValueTreeState& m_valueTreeState;
 
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (PluginProcessorEditor)
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(PluginProcessorEditor)
 };

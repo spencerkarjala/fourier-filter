@@ -2,18 +2,22 @@
 
 #include <JuceHeader.h>
 
-class FFTBuffer {
-public:
-    FFTBuffer(unsigned numChannels, unsigned size, unsigned fftSize, unsigned windowSize, unsigned numOverlaps, std::function<void(std::complex<float>*, unsigned int)> processFFT);
+class FFTBuffer
+{
+  public:
+    FFTBuffer(unsigned numChannels,
+              unsigned size,
+              unsigned fftSize,
+              unsigned windowSize,
+              unsigned numOverlaps,
+              std::function<void(std::complex<float>*, unsigned int)> processFFT);
     ~FFTBuffer() = default;
 
     void write(unsigned channel, float sample);
-    //void read(float* destination, unsigned channel, unsigned length);
-    //void readBackN(float* destination, unsigned channel, unsigned endpos, unsigned length);
     float readResult(unsigned channel);
     unsigned getWritePos(unsigned channel);
 
-private:
+  private:
     juce::AudioBuffer<float> m_inputAudio;
     std::vector<juce::AudioBuffer<juce::dsp::Complex<float>>> m_outputAudioFrames;
     juce::AudioBuffer<std::complex<float>> mResultBuffer;

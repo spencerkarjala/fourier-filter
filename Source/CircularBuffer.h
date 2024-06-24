@@ -4,10 +4,10 @@
 #include <mutex>
 #include <vector>
 
-template <typename SampleType>
+template<typename SampleType>
 class CircularBuffer
 {
-public:
+  public:
     CircularBuffer();
     CircularBuffer(uint32_t size);
 
@@ -19,7 +19,7 @@ public:
 
     bool isFilled();
 
-private:
+  private:
     std::vector<SampleType> m_buffer;
 
     unsigned int m_writeIndex = 0;

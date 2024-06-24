@@ -1,18 +1,8 @@
-/*
-  ==============================================================================
-
-    This file contains the basic framework code for a JUCE plugin processor.
-
-  ==============================================================================
-*/
-
 #include <cmath>
 
 #include "PluginEditor.h"
 #include "PluginProcessor.h"
 
-
-//==============================================================================
 PluginProcessor::PluginProcessor()
   : AudioProcessor(BusesProperties().withInput("Input", juce::AudioChannelSet::stereo(), true).withOutput("Output", juce::AudioChannelSet::stereo(), true))
   , m_circularAudioBuffers(NUM_CHANNELS)
@@ -59,7 +49,6 @@ PluginProcessor::PluginProcessor()
 
 PluginProcessor::~PluginProcessor() {}
 
-//==============================================================================
 const juce::String PluginProcessor::getName() const
 {
     return JucePlugin_Name;
@@ -87,8 +76,7 @@ double PluginProcessor::getTailLengthSeconds() const
 
 int PluginProcessor::getNumPrograms()
 {
-    return 1; // NB: some hosts don't cope very well if you tell them there are 0 programs,
-              // so this should be at least 1, even if you're not really implementing programs.
+    return 1;
 }
 
 int PluginProcessor::getCurrentProgram()
@@ -96,40 +84,25 @@ int PluginProcessor::getCurrentProgram()
     return 0;
 }
 
-void PluginProcessor::setCurrentProgram(int)
-{
-    // parameter name is 'index', deleted to avoid warnings
-}
+void PluginProcessor::setCurrentProgram(int index) {}
 
-const juce::String PluginProcessor::getProgramName(int)
+const juce::String PluginProcessor::getProgramName(int index)
 {
-    // parameter name is 'index', deleted to avoid warnings
     return {};
 }
 
-void PluginProcessor::changeProgramName(int, const juce::String&)
-{
-    // parameter names are 'index' and 'newName', deleted to avoid warnings
-}
+void PluginProcessor::changeProgramName(int index, const juce::String& newName) {}
 
-//==============================================================================
-void PluginProcessor::prepareToPlay(double, int)
-{
-    // parameter names are 'sampleRate' and 'samplesPerBlock', deleted to avoid warnings
-}
+void PluginProcessor::prepareToPlay(double sampleRate, int samplesPerBlock) {}
 
+// called when playback stops
 void PluginProcessor::releaseResources()
 {
-    // When playback stops, you can use this as an opportunity to free up any
-    // spare memory, etc.
+    m_fftBuffer.clear();
 }
 
 bool PluginProcessor::isBusesLayoutSupported(const BusesLayout& layouts) const
 {
-    // This is the place where you check if the layout is supported.
-    // In this template code we only support mono or stereo.
-    // Some plugin hosts, such as certain GarageBand versions, will only
-    // load plugins that support stereo bus layouts.
     if (layouts.getMainOutputChannelSet() != juce::AudioChannelSet::mono() && layouts.getMainOutputChannelSet() != juce::AudioChannelSet::stereo()) {
         return false;
     }
@@ -139,10 +112,8 @@ bool PluginProcessor::isBusesLayoutSupported(const BusesLayout& layouts) const
 
 const uint32_t PARAM_MAX = 1024;
 
-void PluginProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuffer&)
+void PluginProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessage)
 {
-    // MidiBuffer parameter is called 'midiMessage', deleted to avoid warnings
-
     juce::ScopedNoDenormals noDenormals;
     const auto totalNumInputChannels = getTotalNumInputChannels();
     const auto totalNumOutputChannels = getTotalNumOutputChannels();
@@ -223,10 +194,9 @@ void PluginProcessor::processFFT(std::complex<float>* fftData, unsigned int chan
     m_isSpectrumReady.store(true);
 }
 
-//==============================================================================
 bool PluginProcessor::hasEditor() const
 {
-    return true; // (change this to false if you choose to not supply an editor)
+    return true;
 }
 
 juce::AudioProcessorEditor* PluginProcessor::createEditor()
@@ -234,7 +204,6 @@ juce::AudioProcessorEditor* PluginProcessor::createEditor()
     return new PluginProcessorEditor(*this, m_params);
 }
 
-//==============================================================================
 void PluginProcessor::getStateInformation(juce::MemoryBlock& destData)
 {
     auto state = m_params.copyState();
@@ -278,8 +247,6 @@ void PluginProcessor::copySpectrum(std::vector<std::vector<Polar>>& destination)
     }
 }
 
-//==============================================================================
-// This creates new instances of the plugin..
 juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter()
 {
     return new PluginProcessor();

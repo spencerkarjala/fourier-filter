@@ -1,23 +1,14 @@
-/*
-  ==============================================================================
-
-    This file contains the basic framework code for a JUCE plugin editor.
-
-  ==============================================================================
-*/
-
-#include "PluginProcessor.h"
 #include "PluginEditor.h"
+#include "PluginProcessor.h"
 
 #include <numeric>
 
-//==============================================================================
-PluginProcessorEditor::PluginProcessorEditor (PluginProcessor& p, juce::AudioProcessorValueTreeState& vts)
-    :   AudioProcessorEditor(&p),
-        pluginProcessor(p),
-        m_audioBuffers(NUM_CHANNELS),
-        m_spectra(NUM_CHANNELS),
-        m_valueTreeState(vts)
+PluginProcessorEditor::PluginProcessorEditor(PluginProcessor& p, juce::AudioProcessorValueTreeState& vts)
+  : AudioProcessorEditor(&p)
+  , pluginProcessor(p)
+  , m_audioBuffers(NUM_CHANNELS)
+  , m_spectra(NUM_CHANNELS)
+  , m_valueTreeState(vts)
 {
     for (auto& audioBuffer : m_audioBuffers) {
         audioBuffer.clear();
@@ -104,13 +95,15 @@ PluginProcessorEditor::PluginProcessorEditor (PluginProcessor& p, juce::AudioPro
     this->startTimerHz(60);
 }
 
-PluginProcessorEditor::~PluginProcessorEditor() {
+PluginProcessorEditor::~PluginProcessorEditor()
+{
     this->stopTimer();
 }
 
 constexpr float EPSILON = std::numeric_limits<float>::epsilon();
 
-float getAmplitudeInDbScaled(float ampl, float min, float max) {
+float getAmplitudeInDbScaled(float ampl, float min, float max)
+{
     float resultInDb = 10.f * std::log(ampl + EPSILON);
     float resultInDbScaled = juce::jlimit(0.f, max - min, resultInDb - min) / (max - min);
 
@@ -119,8 +112,8 @@ float getAmplitudeInDbScaled(float ampl, float min, float max) {
 
 typedef std::vector<std::pair<float, float>> PairVector;
 
-//==============================================================================
-void PluginProcessorEditor::paint(juce::Graphics& g) {
+void PluginProcessorEditor::paint(juce::Graphics& g)
+{
     g.fillAll(juce::Colour(0xfff6efe4));
 
     uint32_t width = this->getWidth();
@@ -134,7 +127,7 @@ void PluginProcessorEditor::paint(juce::Graphics& g) {
 
     auto& spectrum = m_spectra[0];
 
-    const float DB_20 = (1/10.f) * 20.f;
+    const float DB_20 = (1 / 10.f) * 20.f;
     const float SAMPLE_RATE = static_cast<float>(pluginProcessor.getSampleRate());
     const float FREQ_PER_BIN = SAMPLE_RATE / (static_cast<float>(FFT_SIZE) / 2.f);
 
@@ -151,7 +144,7 @@ void PluginProcessorEditor::paint(juce::Graphics& g) {
 
     float incr = SAMPLE_RATE / (2.f * static_cast<float>(spectrum.size()));
     float minFreq = 20.f;
-    
+
     for (uint32_t bin = 1; bin < spectrum.size(); ++bin) {
         float binFreq = bin * incr;
         float logBinFreq = std::log10f(binFreq - minFreq);
@@ -169,8 +162,7 @@ void PluginProcessorEditor::paint(juce::Graphics& g) {
 
         if (lvalue > rvalue) {
             amplCombined[bin] = { horizontalPosition, rvalue };
-        }
-        else {
+        } else {
             amplCombined[bin] = { horizontalPosition, lvalue };
         }
 
@@ -178,14 +170,12 @@ void PluginProcessorEditor::paint(juce::Graphics& g) {
         amplRight[bin] = { horizontalPosition, rvalue };
     }
 
-    const std::vector<std::pair<PairVector&, juce::Colour>> amplitudeColorPairs = {
-        { amplLeft, juce::Colour(0xff444372) },
-        { amplRight, juce::Colour(0xff744342) },
-        { amplCombined, juce::Colour(0xaa000000) }
-    };
+    const std::vector<std::pair<PairVector&, juce::Colour>> amplitudeColorPairs = { { amplLeft, juce::Colour(0xff444372) },
+                                                                                    { amplRight, juce::Colour(0xff744342) },
+                                                                                    { amplCombined, juce::Colour(0xaa000000) } };
 
     juce::Point<float> prevPoint, currPoint, nextPoint;
-    
+
     for (auto& amplitudeColorPair : amplitudeColorPairs) {
         auto& ampl = amplitudeColorPair.first;
         const auto& color = amplitudeColorPair.second;
@@ -194,11 +184,6 @@ void PluginProcessorEditor::paint(juce::Graphics& g) {
 
         const uint32_t averageWidth = 9;
         const uint32_t halfAvgWidth = (averageWidth - 1) / 2;
-
-        //for (uint32_t index = 0; index < halfAvgWidth; ++index) {
-            //amplAveraged[index] = ampl[index];
-            //amplAveraged[amplAveraged.size() - 1 - index] = ampl[ampl.size() - 1 - index];
-        //}
 
         for (uint32_t index = halfAvgWidth; index < amplAveraged.size() - halfAvgWidth; ++index) {
             float total = 0.f;
@@ -210,19 +195,11 @@ void PluginProcessorEditor::paint(juce::Graphics& g) {
             amplAveraged[index] = { ampl[index].first, total / static_cast<float>(averageWidth) };
         }
 
-        for (int i = 1; i < ampl.size(); ++i) {
-            //amplAveraged[i] = ampl[i];
-            //amplAveraged[i] = amplAveraged[i - 1] + 0.6 * (ampl[i] - amplAveraged[i - 1]);
-        }
-
         float prevAmpl = amplAveraged[0].second;
         float currAmpl = amplAveraged[1].second;
 
         prevPoint = { pathBaseHorizontal - 1, pathBaseVertical };
         currPoint = { pathBaseHorizontal, pathBaseVertical - pathHeight * prevAmpl };
-
-        //prevPoint = { pathBaseHorizontal, pathBaseVertical - pathHeight * prevAmpl };
-        //currPoint = { pathBaseHorizontal + binWidth, pathBaseVertical - pathHeight * currAmpl };
 
         spectrumPath.clear();
         spectrumPath.startNewSubPath(prevPoint);
@@ -257,29 +234,32 @@ void PluginProcessorEditor::paint(juce::Graphics& g) {
         g.setColour(juce::Colour(0xfff6efe4));
         g.fillRect(juce::Rectangle<int>(0, this->getHeight() - spectrumPadding - spectrumHeight, spectrumPadding, spectrumHeight));
         g.fillRect(juce::Rectangle<int>(0, this->getHeight() - spectrumPadding, static_cast<uint32_t>(this->getWidth()), spectrumPadding));
-        g.fillRect(juce::Rectangle<int>(static_cast<uint32_t>(this->getWidth()) - spectrumPadding, static_cast<uint32_t>(this->getHeight()) - spectrumPadding - spectrumHeight, spectrumPadding, spectrumHeight));
+        g.fillRect(juce::Rectangle<int>(static_cast<uint32_t>(this->getWidth()) - spectrumPadding,
+                                        static_cast<uint32_t>(this->getHeight()) - spectrumPadding - spectrumHeight,
+                                        spectrumPadding,
+                                        spectrumHeight));
     }
 }
 
-void PluginProcessorEditor::resized() {
+void PluginProcessorEditor::resized()
+{
     const int width = this->getWidth();
 
     m_dialBands.setBounds(width / 7 - 35, 20, 70, 70);
-    m_dialPosition.setBounds(2*width / 7 - 35, 20, 70, 70);
-    m_dialWidth.setBounds(3*width / 7 - 35, 20, 70, 70);
+    m_dialPosition.setBounds(2 * width / 7 - 35, 20, 70, 70);
+    m_dialWidth.setBounds(3 * width / 7 - 35, 20, 70, 70);
     m_dialOffset.setBounds(4 * width / 7 - 35, 20, 70, 70);
     m_dialBias.setBounds(5 * width / 7 - 35, 20, 70, 70);
     m_dialMakeup.setBounds(6 * width / 7 - 35, 20, 70, 70);
 }
 
-std::complex<float> convertToComplex(const Polar& rhs) {
-    return {
-        rhs.amplitude * std::cosf(rhs.phase),
-        rhs.amplitude * std::sinf(rhs.phase)
-    };
+std::complex<float> convertToComplex(const Polar& rhs)
+{
+    return { rhs.amplitude * std::cosf(rhs.phase), rhs.amplitude * std::sinf(rhs.phase) };
 }
 
-void PluginProcessorEditor::timerCallback() {
+void PluginProcessorEditor::timerCallback()
+{
     bool shouldRepaint = false;
 
     std::vector<std::vector<Polar>> tmpSpectra(m_spectra.size());
